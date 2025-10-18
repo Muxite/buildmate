@@ -1,0 +1,26 @@
+[project]
+name = "brave-search-service"
+version = "0.1.0"
+description = "Microservice wrapper around Brave Search API"
+authors = [
+  { name = "Your Name", email = "you@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+  "flask >= 2.3",
+  "requests >= 2.31",
+  "python-dotenv >= 1.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest >= 7.0",
+  "pytest-cov >= 4.0",
+  "flake8 >= 6.0",
+  "black >= 24.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

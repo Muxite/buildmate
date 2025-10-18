@@ -9,13 +9,36 @@ services:
 #    env_file:
 #      - .env
 
-  basic:
+  buildmate:
     build:
-      context: basic
+      context: buildmate
       dockerfile: Dockerfile
     volumes:
-      - ./basic/app:/basic/app
-      - ./basic/tests:/basic/tests
-    command: [ "python", "app/basic.py" ]
+      - ./buildmate/app:/buildmate/app
+      - ./buildmate/tests:/buildmate/tests
+    command: [ "python", "app/main.py" ]
     env_file:
       - .env
+
+  search:
+    build:
+      context: search
+      dockerfile: Dockerfile
+    volumes:
+      - ./search/app:/search/app
+    command: [ "python", "app/main.py" ]
+    env_file:
+      - keys.env
+      - .env
+    ports:
+      - "5000:5000"
+
+  search-test:
+    build:
+      context: search_test
+      dockerfile: Dockerfile
+    depends_on:
+      - search
+    command: ["python", "app/main.py"]
+    environment:
+      SEARCH_URL: "http://search:5000/search"

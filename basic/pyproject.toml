@@ -1,0 +1,17 @@
+ [project]
+ name = "basic"
+ version = "0.1.0"
+ description = "basic"
+ requires-python = ">=3.8"
+
+ dependencies = [
+   "pytest",
+ ]
+
+ [tool.setuptools]
+ package-dir = {"" = "."}
+ packages = ["app", "tests"]
+
+ [tool.pytest.ini_options]
+ log_cli = true
+ log_cli_level = "INFO"

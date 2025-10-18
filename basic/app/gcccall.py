@@ -1,45 +1,29 @@
-
-
-# cli 
-import os
 import subprocess
+import sys
+import os
 
-# gemini
-from google import genai
+def compile_c_file(c_file):
+    if not os.path.exists(c_file):
+        print(f"Error: File '{c_file}' does not exist.")
+        return
 
-# Initialize the client with your Vertex AI API key
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+    # Output executable name (remove .c extension)
+    exe_file = os.path.splitext(c_file)[0]
 
-# Choose a Gemini model (use gemini-2.0-pro, gemini-1.5-flash, etc.)
-model = "gemini-2.0-flash"
-
-
-# attempt to compile
-# send compilation output to gemini along with "output pure code"
-# send fixed code to c 
-# compile again
-def compile_c_file(c_file: str):
+    # Run gcc command
     try:
         result = subprocess.run(
-            ["gcc", "-o", "program.out", c_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
+            ["gcc", c_file, "-o", exe_file],
+            capture_output=True,
+            text=True
         )
-        output = result.stdout + result.stderr
-        success = result.returncode == 0
-        return success, output.strip()
-    except FileNotFoundError:
-        return False, "file not found"
+        
+        if result.returncode == 0:
+            print(f"Compilation successful! Executable: {exe_file}")
+        else:
+            print("Compilation failed with errors:")
+            print(result.stderr)
+    except Exception as e:
+        print(f"Error running gcc: {e}")
 
-
-# # Send a prompt
-# prompt = """
-
-# """
-# response = client.models.generate_content(
-#     model=model,
-#     contents=[{"role": "user", "parts": [{"text": prompt}]}],
-# )
-
-# print(response.text)
+compile_c_file("app/csrc/hello.c")

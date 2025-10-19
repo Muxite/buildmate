@@ -29,7 +29,7 @@ def ai_search(problem_context: str) -> str:
     synthesis_instruction = (
         "You are an expert researcher and technical writer. "
         "Extract only the most critical, actionable information from the provided web content. "
-        "Structure it clearly, using bullet points and bolding for readability."
+        "Structure it clearly and concisely, using bullet points and bolding for readability."
     )
 
     # Step 2: Summarize the problem
@@ -47,6 +47,8 @@ def ai_search(problem_context: str) -> str:
             f"Based on this problem summary: '{problem_summary}', "
             "generate the single best search query that will yield the most useful technical solution. "
             "Only return the query string."
+            "You should always first aim to find official documentation, only after you fail to find this do you resort to other sources."
+
         ),
         context=problem_summary
     )
@@ -63,6 +65,8 @@ def ai_search(problem_context: str) -> str:
         prompt=(
             "Analyze the following search results and problem summary. "
             "Select and list only the URLs of the top 1-3 most relevant results, one per line."
+            "You should always first aim to find official documentation, only after you fail to find this do you resort to other sources."
+
         ),
         context=problem_summary,
         reference=results_str

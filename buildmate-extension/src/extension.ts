@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Compiling C code with BuildMate...",
+            title: "Compiling C code with buildmate...",
             cancellable: false
         }, async () => {
             try {
@@ -47,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showInformationMessage(`✅ Compilation successful: ${exePath}`);
 
             } catch (error: any) {
-                vscode.window.showErrorMessage(`Error communicating with BuildMate server: ${error.message}`);
+                vscode.window.showErrorMessage(`Error communicating with buildmate server: ${error.message}`);
             }
         });
     });

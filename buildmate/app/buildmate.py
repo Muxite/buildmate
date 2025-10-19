@@ -43,9 +43,11 @@ class BuildMate:
             f"Here is the C file:\n{cfile_content}\n\n"
             "Think about what this C file is supposed to do. "
             "Infer what the existing functions and variables are supposed to be.\n"
-            "Write what you think each undeclared function/variable should be.\n\n"
+            "Write what you think each undeclared function/variable should be.\n"
+            "You should write as full coverage as you can (implement every function), don't leave methods or variables blank. The user is trusting you to provide code that will compile and give some output that is congruent with expected specification.\n"
             f"Compiler output:\n{compiler_output}\n"
-            "YOUR OUTPUT IS PURE C, WRITE INSIDE THE FILE ONLY. NON-C GOES IN COMMENTS."
+            "YOU ARE NOT ALLOWED TO INCLUDE ANY LIBRARIES. NOT EVEN STD."
+            "YOUR OUTPUT IS PURE C, WRITE INSIDE THE FILE ONLY. NO COMMENTS (nobody will read this code)"
         )
 
         return prompt

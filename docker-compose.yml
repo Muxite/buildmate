@@ -14,6 +14,19 @@ services:
       - .env
       - keys.env
 
+  buildmate-server:
+    build:
+      context: buildmate
+      dockerfile: Dockerfile
+    volumes:
+      - ./buildmate-server/app:/buildmate-server/app
+    command: [ "python", "server.py" ]
+    env_file:
+      - .env
+      - keys.env
+    ports:
+      - "8000:8000"   # maps container port 8000 to host port 8001
+
   search:
     build:
       context: search
@@ -26,6 +39,7 @@ services:
       - .env
     ports:
       - "5000:5000"
+
 
   search-test:
     build:

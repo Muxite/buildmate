@@ -2,4 +2,4 @@ pytest
 google-genai
 beautifulsoup4
 requests
-
+flask

@@ -6,7 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/search" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/search_test" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12 (euglena)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.12 virtualenv at C:\Users\mukch\projects\TradeMon\venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

@@ -17,8 +17,11 @@ services:
       - ./buildmate/app:/buildmate/app
       - ./buildmate/tests:/buildmate/tests
     command: [ "python", "app/main.py" ]
+    depends_on:
+      - search
     env_file:
       - .env
+      - keys.env
 
   search:
     build:

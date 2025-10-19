@@ -1,11 +1,11 @@
  [project]
- name = "basic"
+ name = "buildmate"
  version = "0.1.0"
- description = "basic"
+ description = "buildmate"
  requires-python = ">=3.8"
 
  dependencies = [
-   "pytest",
+   "pytest", "requests"
  ]
 
  [tool.setuptools]

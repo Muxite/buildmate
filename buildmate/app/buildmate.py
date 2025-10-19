@@ -16,7 +16,7 @@ class BuildMate:
         if not os.path.exists(self.cfile):
             return False, f"Error: File '{self.cfile}' does not exist."
 
-        exe_file = os.path.splitext(self.cfile)[0]  # name of output exe
+        exe_file = os.path.splitext(self.cfile)[0]+".exe"  # name of output exe
         try:
             result = subprocess.run(
                 ["gcc", "-o", exe_file, self.cfile],

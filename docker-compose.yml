@@ -16,6 +16,7 @@ services:
     volumes:
       - ./buildmate/app:/buildmate/app
       - ./buildmate/tests:/buildmate/tests
+      - ./buildmate/app/csrc:/buildmate/app/csrc
     command: [ "python", "app/main.py" ]
     depends_on:
       - search

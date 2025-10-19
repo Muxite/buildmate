@@ -1,0 +1,89 @@
+
+import subprocess
+import os
+from google import genai
+
+MODEL = "gemini-2.0-flash"
+
+class BuildMate:
+    def __init__(self, cfile):
+        self.cfile = cfile
+        self.api_key = os.getenv("GOOGLE_API_KEY")
+        if not self.api_key:
+            raise RuntimeError("Missing GOOGLE_API_KEY environment variable.")
+
+    def compile_c_file(self):
+        if not os.path.exists(self.cfile):
+            return False, f"Error: File '{self.cfile}' does not exist."
+
+        exe_file = os.path.splitext(self.cfile)[0]+".exe"  # name of output exe
+        try:
+            result = subprocess.run(
+                ["gcc", "-o", exe_file, self.cfile],
+                capture_output=True,
+                text=True
+            )
+            output = result.stdout + result.stderr
+            success = result.returncode == 0
+
+            if success:
+                print(f"Compilation successful! Executable: {exe_file}")
+            else:
+                print("Compilation failed with errors:")
+                print(result.stderr)
+
+            return success, output
+
+        except Exception as e:
+            return False, f"Error running gcc: {e}"
+
+    def infer_missing_symbols(self, compiler_output):
+        client = genai.Client(api_key=self.api_key)
+
+        # Read current C file
+        with open(self.cfile, "r") as f:
+            cfile_content = f.read()
+
+        prompt = (
+            f"Here is the C file:\n{cfile_content}\n\n"
+            "Think about what this C file is supposed to do. "
+            "Infer what the existing functions and variables are supposed to be.\n"
+            "Write what you think each undeclared function/variable should be.\n\n"
+            f"Compiler output:\n{compiler_output}\n"
+            "YOUR OUTPUT IS PURE C, WRITE INSIDE THE FILE ONLY. NON-C GOES IN COMMENTS."
+        )
+
+        response = client.models.generate_content(
+            model=MODEL,
+            contents=[{"role": "user", "parts": [{"text": prompt}]}],
+        )
+
+        # Remove first and last line
+        lines = response.text.splitlines()
+        if len(lines) >= 3:
+            clean_lines = lines[1:-1]
+        else:
+            clean_lines = lines
+        fixed_code = "\n".join(clean_lines)
+
+        # Overwrite C file
+        with open(self.cfile, "w") as f:
+            f.write(fixed_code)
+
+        print(f"Gemini suggestions written to {self.cfile}")
+        return fixed_code
+
+    def procedure(self, max_retries=2):
+        """
+        Full workflow: compile → send to Gemini if errors → recompile
+        """
+        for attempt in range(max_retries + 1):
+            success, output = self.compile_c_file()
+            if success:
+                return True, output
+            print(f"Attempt {attempt+1} failed, sending output to Gemini for fixes...")
+            self.infer_missing_symbols(output)
+
+        # Final compile after all retries
+        success, output = self.compile_c_file()
+        return success, output

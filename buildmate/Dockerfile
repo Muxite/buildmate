@@ -3,12 +3,12 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /basic
 
-# Install GCC and libc headers
+# Install MinGW-w64 (for cross-compiling to Windows) and essential build tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        gcc \
-        libc6-dev \
+        mingw-w64 \
         build-essential \
+        libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project files

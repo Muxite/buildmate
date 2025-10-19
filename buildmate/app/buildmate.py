@@ -15,14 +15,11 @@ class BuildMate:
     def compile_c_file(self):
         if not os.path.exists(self.cfile):
             return False, f"Error: File '{self.cfile}' does not exist."
-
-        exe_file = os.path.splitext(self.cfile)[0]+".exe"  # name of output exe
+        
+        exe_file = os.path.splitext(self.cfile)[0] + ".exe"  # name of output exe
         try:
-            result = subprocess.run(
-                ["gcc", "-o", exe_file, self.cfile],
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(["x86_64-w64-mingw32-gcc", "-o", exe_file, self.cfile], capture_output=True, text=True)
+
             output = result.stdout + result.stderr
             success = result.returncode == 0
 

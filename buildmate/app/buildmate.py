@@ -1,17 +1,13 @@
 from app.ai_search import ai_search
+from app.call_gemini import GeminiClient
 import subprocess
 import os
-from google import genai
 
 
 class BuildMate:
     def __init__(self, cfile):
         self.cfile = cfile
-        self.model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-        self.api_key = os.getenv("GOOGLE_API_KEY")
-        self.client = genai.Client(api_key=self.api_key)
-        if not self.api_key:
-            raise RuntimeError("Missing GOOGLE_API_KEY environment variable.")
+        self.gemini_client = GeminiClient()  # Use the GeminiClient for all Gemini-related operations
 
     def compile_c_file(self):
         if not os.path.exists(self.cfile):
@@ -19,7 +15,11 @@ class BuildMate:
 
         exe_file = os.path.splitext(self.cfile)[0] + ".exe"  # name of output exe
         try:
-            result = subprocess.run(["x86_64-w64-mingw32-gcc", "-o", exe_file, self.cfile], capture_output=True, text=True)
+            result = subprocess.run(
+                ["x86_64-w64-mingw32-gcc", "-o", exe_file, self.cfile],
+                capture_output=True,
+                text=True,
+            )
 
             output = result.stdout + result.stderr
             success = result.returncode == 0
@@ -39,7 +39,7 @@ class BuildMate:
         with open(self.cfile, "r") as f:
             cfile_content = f.read()
 
-        prompt = (
+        return (
             f"Here is the C file:\n{cfile_content}\n\n"
             "Think about what this C file is supposed to do. "
             "Infer what the existing functions and variables are supposed to be.\n"
@@ -48,26 +48,13 @@ class BuildMate:
             "YOUR OUTPUT IS PURE C, WRITE INSIDE THE FILE ONLY. NON-C GOES IN COMMENTS."
         )
 
-        return prompt
-
     def infer_missing_symbols(self, compiler_output):
-
         prompt = self._make_prompt(compiler_output)
 
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=[{"role": "user", "parts": [{"text": prompt}]}],
+        fixed_code = self.gemini_client.generate(
+            prompt=prompt, system_instruction="Focus on fixing and completing the C file."
         )
 
-        # Remove first and last line
-        lines = response.text.splitlines()
-        if len(lines) >= 3:
-            clean_lines = lines[1:-1]
-        else:
-            clean_lines = lines
-        fixed_code = "\n".join(clean_lines)
-
-        # Overwrite C file
         with open(self.cfile, "w") as f:
             f.write(fixed_code)
 
@@ -76,7 +63,8 @@ class BuildMate:
 
     def procedure(self, max_retries=3):
         """
-        Full workflow: compile → send to Gemini if errors → recompile
+        Try to compile the C file. If compilation fails, try to fix the errors.
+        If stuck on the problem, seek online internet help.
         """
         for attempt in range(max_retries + 1):
             success, output = self.compile_c_file()
@@ -90,10 +78,7 @@ class BuildMate:
                 prompt = self._make_prompt(output)
                 output += ai_search(prompt)
 
-            # Always try to infer missing symbols, with our without extra details.
             self.infer_missing_symbols(output)
 
-
-            # If we reach here, all retries failed
         print("All attempts failed. Returning last output.")
         return False, output

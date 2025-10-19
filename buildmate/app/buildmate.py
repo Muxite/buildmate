@@ -1,14 +1,15 @@
-
+from app.ai_search import ai_search
 import subprocess
 import os
 from google import genai
 
-MODEL = "gemini-2.0-flash"
 
 class BuildMate:
     def __init__(self, cfile):
         self.cfile = cfile
+        self.model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
         self.api_key = os.getenv("GOOGLE_API_KEY")
+        self.client = genai.Client(api_key=self.api_key)
         if not self.api_key:
             raise RuntimeError("Missing GOOGLE_API_KEY environment variable.")
 
@@ -16,13 +17,10 @@ class BuildMate:
         if not os.path.exists(self.cfile):
             return False, f"Error: File '{self.cfile}' does not exist."
 
-        exe_file = os.path.splitext(self.cfile)[0]+".exe"  # name of output exe
+        exe_file = os.path.splitext(self.cfile)[0] + ".exe"  # name of output exe
         try:
-            result = subprocess.run(
-                ["gcc", "-o", exe_file, self.cfile],
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(["x86_64-w64-mingw32-gcc", "-o", exe_file, self.cfile], capture_output=True, text=True)
+
             output = result.stdout + result.stderr
             success = result.returncode == 0
 
@@ -37,10 +35,7 @@ class BuildMate:
         except Exception as e:
             return False, f"Error running gcc: {e}"
 
-    def infer_missing_symbols(self, compiler_output):
-        client = genai.Client(api_key=self.api_key)
-
-        # Read current C file
+    def _make_prompt(self, compiler_output):
         with open(self.cfile, "r") as f:
             cfile_content = f.read()
 
@@ -53,8 +48,14 @@ class BuildMate:
             "YOUR OUTPUT IS PURE C, WRITE INSIDE THE FILE ONLY. NON-C GOES IN COMMENTS."
         )
 
-        response = client.models.generate_content(
-            model=MODEL,
+        return prompt
+
+    def infer_missing_symbols(self, compiler_output):
+
+        prompt = self._make_prompt(compiler_output)
+
+        response = self.client.models.generate_content(
+            model=self.model,
             contents=[{"role": "user", "parts": [{"text": prompt}]}],
         )
 
@@ -73,7 +74,7 @@ class BuildMate:
         print(f"Gemini suggestions written to {self.cfile}")
         return fixed_code
 
-    def procedure(self, max_retries=2):
+    def procedure(self, max_retries=3):
         """
         Full workflow: compile → send to Gemini if errors → recompile
         """
@@ -81,9 +82,18 @@ class BuildMate:
             success, output = self.compile_c_file()
             if success:
                 return True, output
-            print(f"Attempt {attempt+1} failed, sending output to Gemini for fixes...")
+
+            print(f"Attempt {attempt + 1} failed.")
+
+            # Only seek online AI help after the first failed attempt, appends extra details
+            if attempt >= -1:
+                prompt = self._make_prompt(output)
+                output += ai_search(prompt)
+
+            # Always try to infer missing symbols, with our without extra details.
             self.infer_missing_symbols(output)
 
-        # Final compile after all retries
-        success, output = self.compile_c_file()
-        return success, output
+
+            # If we reach here, all retries failed
+        print("All attempts failed. Returning last output.")
+        return False, output

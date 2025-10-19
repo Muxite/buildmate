@@ -1,73 +1,78 @@
 import os
 import time
-import google.generativeai as genai
+from google import genai
 
-def call_gemini(
-    prompt,
-    context=None,
-    search_results=None,
-    system_instruction=None,
-    model="gemini-2.5-flash",
-    max_retries=3,
-    backoff_factor=2.0
-):
+class GeminiClient:
     """
-    Calls the Gemini LLM endpoint to generate content.
-
-    PARAMETERS:
-    - prompt (str): Core instruction or question.
-    - context (str, optional): Chat history or problem description.
-    - search_results (list or str, optional): External grounding information.
-    - system_instruction (str, optional): Instructions to guide the model.
-    - model (str): Gemini model to use (default: 'gemini-2.5-flash').
-    - max_retries (int): Number of retry attempts for rate limits.
-    - backoff_factor (float): Factor for exponential backoff.
-
-    RETURNS:
-    - str: The generated text response from Gemini.
+    Wrapper for interacting with Google Gemini / GenAI models.
+    Handles retries, system instructions, context, and optional reference data.
     """
 
-    # Initialize the client
-    client = genai.Client()
+    def __init__(self):
+        self.api_key = os.getenv("GOOGLE_API_KEY")
+        self.client = genai.Client(api_key=self.api_key)
+        self.model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-    # Prepare the message list
-    messages = []
+    def generate(
+        self,
+        prompt: str,
+        context: str = None,
+        reference: str | list[str] = None,
+        system_instruction: str = None,
+        max_retries: int = 3,
+        backoff_factor: float = 2.0,
+    ) -> str:
+        """
+        Sends a prompt to the Gemini model and returns the generated text.
+        Retries on failure with exponential backoff.
 
-    if system_instruction:
-        messages.append({"role": "system", "content": system_instruction})
+        Args:
+            prompt (str): Main user prompt.
+            context (str, optional): Previous chat or problem description.
+            reference (str | list[str], optional): Supporting reference info.
+            system_instruction (str, optional): Instructions for model behavior.
+            max_retries (int): Max retry attempts on failure.
+            backoff_factor (float): Exponential backoff factor for retries.
 
-    if context:
-        messages.append({"role": "user", "content": context})
+        Returns:
+            str: Generated response from the model.
+        """
+        messages = []
 
-    if search_results:
-        if isinstance(search_results, list):
-            search_text = "\n".join(search_results)
-        else:
-            search_text = str(search_results)
-        messages.append({"role": "user", "content": f"Reference data:\n{search_text}"})
+        full_prompt = ""
 
-    # Add the main prompt last
-    messages.append({"role": "user", "content": prompt})
+        if system_instruction:
+            full_prompt += f"System instruction:\n{system_instruction}\n\n"
+        if context:
+            full_prompt += f"Context:\n{context}\n\n"
+        if reference:
+            ref_text = "\n".join(reference) if isinstance(reference, list) else str(reference)
+            full_prompt += f"Reference data:\n{ref_text}\n\n"
 
-    # Retry logic
-    for attempt in range(max_retries):
-        try:
-            # Call the Gemini model
-            response = client.models.generate_content(
-                model=model,
-                contents=messages
-            )
-            return response.text
-        except Exception as e:
-            if attempt == max_retries - 1:
-                raise RuntimeError(f"Failed to call Gemini API after {max_retries} attempts: {e}")
-            wait_time = backoff_factor ** attempt
-            print(f"Error: {e}. Retrying in {wait_time} seconds...")
-            time.sleep(wait_time)
+        full_prompt += f"User prompt:\n{prompt}"
 
-if __name__ == '__main__':
+        for attempt in range(max_retries):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=full_prompt
+                )
+                return response.text
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise RuntimeError(f"Failed to call Gemini after {max_retries} attempts: {e}")
+                wait_time = backoff_factor ** attempt
+                print(f"Error calling Gemini: {e}. Retrying in {wait_time:.1f} sec...")
+                time.sleep(wait_time)
+
+
+if __name__ == "__main__":
     try:
-        result = call_gemini("Hello, Gemini! Please summarize this test.", system_instruction="Act as an expert assistant.")
-        print("Gemini response:", result)
+        gemini = GeminiClient(model="gemini-2.5-flash")
+        result = gemini.generate(
+            "Hello, Gemini! Please summarize this test.",
+            system_instruction="Act as an expert assistant."
+        )
+        print("Gemini response:\n", result)
     except Exception as e:
         print("Error:", e)

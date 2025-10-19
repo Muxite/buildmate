@@ -5,7 +5,7 @@
  requires-python = ">=3.8"
 
  dependencies = [
-   "pytest", "requests"
+   "pytest", "requests", "google-generativeai"
  ]
 
  [tool.setuptools]

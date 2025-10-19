@@ -14,9 +14,8 @@ def fetch_webpage_content(url):
     """
     try:
         response = requests.get(url, timeout=10)
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        response.raise_for_status()
 
-        # Parse HTML and extract plaintext
         soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text(separator="\n", strip=True)
         return text

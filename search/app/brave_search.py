@@ -8,7 +8,7 @@ class BraveSearch:
         self.backoff_factor = backoff_factor
         self.base_url = "https://api.search.brave.com/res/v1/web/search"
 
-    def search(self, query: str, count: int = 10, search_lang: str = "en", country: str = None, **kwargs) -> str:
+    def search(self, query: str, count: int = 3, search_lang: str = "en", country: str = None, **kwargs) -> str:
         headers = {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",

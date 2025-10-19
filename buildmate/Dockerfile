@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 # Set working directory
-WORKDIR /basic
+WORKDIR /buildmate
 
 # Install GCC and libc headers
 RUN apt-get update && \
